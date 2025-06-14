@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { ArrowLeft, Clock, CheckCircle, CreditCard, Smartphone } from "lucide-re
 import { useToast } from "@/hooks/use-toast";
 import { Product, Order } from "@/types/database";
 import { supabase } from "@/integrations/supabase/client";
+import OrderDetailModal from "./OrderDetailModal";
 
 interface PaymentPageProps {
   order: Omit<Order, 'id' | 'created_at' | 'updated_at' | 'payment_id' | 'payment_url'>;
@@ -15,7 +15,7 @@ interface PaymentPageProps {
   onSuccess: () => void;
 }
 
-interface PayAcc {
+interface PaymentAccount {
   id: string;
   method: "bank" | "qris";
   bank_name: string;
@@ -23,19 +23,23 @@ interface PayAcc {
   account_name: string;
   barcode_path: string | null;
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 const BUCKET = "payment-barcodes"; // Menggunakan bucket yang sudah ada untuk menyimpan bukti pembayaran
 
 const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) => {
+  const [orderData, setOrderData] = useState<Order | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<'qris' | 'bank' | ''>('');
   const [paymentType, setPaymentType] = useState<'dp50' | 'full'>('full');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showQRIS, setShowQRIS] = useState(false);
   const [paymentProof, setPaymentProof] = useState<string | null>(null); // State untuk bukti pembayaran
   const [paymentProofError, setPaymentProofError] = useState<string>(''); // State untuk error upload
-  const [paymentAccounts, setPaymentAccounts] = useState<PayAcc[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState<PayAcc | null>(null);
+  const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<PaymentAccount | null>(null);
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
   const { toast } = useToast();
 
   // Fetch payment accounts from database
@@ -49,12 +53,7 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
           .order('created_at', { ascending: true });
 
         if (error) {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Gagal mengambil data rekening pembayaran",
-          });
-          return;
+          throw error;
         }
 
         setPaymentAccounts(data || []);
@@ -65,7 +64,6 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
           setSelectedPayment(defaultAccount.method as 'qris' | 'bank');
         }
       } catch (error) {
-        console.error('Error fetching payment accounts:', error);
         toast({
           variant: "destructive",
           title: "Error",
@@ -149,7 +147,6 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
 
           paymentProofPath = filename;
         } catch (error) {
-          console.error('Error uploading payment proof:', error);
           throw new Error('Gagal mengunggah bukti pembayaran');
         }
       }
@@ -171,28 +168,36 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
         payment_proof: paymentProofPath,
       };
 
-      const { data, error } = await supabase
+      const { data: orderResult, error } = await supabase
         .from('orders')
         .insert([orderData])
-        .select('id, status, payment_method, payment_type, payment_amount, remaining_amount')
+        .select('*')
         .single();
 
       if (error) {
-        throw new Error(error.message || 'Gagal menyimpan pesanan. Silakan coba lagi.');
+        throw error;
       }
 
-      toast({
-        title: "Pembayaran Berhasil! 🎉",
-        description: `Pre-order Anda telah dikonfirmasi${paymentType === 'dp50' ? ' dengan DP 50%' : ' dengan pembayaran penuh'}. Terima kasih!`,
-      });
-      
+      if (!orderResult) {
+        throw new Error('Data order tidak ditemukan');
+      }
+
+      // Update order data and show modal immediately
+      const updatedOrder = {
+        ...order,
+        ...orderResult,
+        payment_proof: orderResult.payment_proof || null,
+        status: orderResult.status || 'pending',
+      };
+
+      setOrderData(updatedOrder);
+      setShowOrderDetail(true);
       onSuccess();
     } catch (error) {
-      console.error('Error processing payment:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Gagal memproses pembayaran. Silakan coba lagi.",
+        description: error instanceof Error ? error.message : "Terjadi kesalahan",
       });
     } finally {
       setIsProcessing(false);
@@ -208,6 +213,17 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
   return (
     <section className="py-20 bg-background min-h-screen">
       <div className="container mx-auto px-4 max-w-2xl">
+        {showOrderDetail && (
+          <OrderDetailModal
+            order={orderData || order}
+            product={product}
+            onClose={() => {
+              setShowOrderDetail(false);
+              onSuccess();
+            }}
+          />
+        )}
+
         <div className="mb-6">
           <Button
             variant="outline"

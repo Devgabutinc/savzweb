@@ -34,6 +34,7 @@ export type Order = {
   remaining_amount: number | null;
   payment_id: string | null;
   payment_url: string | null;
+  payment_proof: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
