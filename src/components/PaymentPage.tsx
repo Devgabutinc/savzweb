@@ -101,55 +101,59 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
   };
 
   const handleCompletePayment = async () => {
+    if (!paymentProof) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Bukti transfer wajib diunggah sebelum melanjutkan",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
-      if (!paymentProof) {
-        throw new Error('Silakan upload bukti pembayaran terlebih dahulu');
+      // Validate payment proof format
+      const match = paymentProof.match(/data:(.*?);base64/);
+      if (!match) {
+        throw new Error('Format gambar tidak valid. Harap unggah gambar dengan format yang benar');
+      }
+      const mimeType = match[1];
+      
+      // Convert base64 to Blob
+      const base64Data = paymentProof.split(',')[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+
+      // Validate image size (max 5MB)
+      if (blob.size > 5 * 1024 * 1024) {
+        throw new Error('Ukuran gambar terlalu besar. Maksimal 5MB');
       }
 
-      // Upload bukti pembayaran ke storage jika ada
-      let paymentProofPath = '';
-      if (paymentProof) {
-        try {
-          // Extract MIME type from data URL
-          const match = paymentProof.match(/data:(.*?);base64/);
-          if (!match) throw new Error('Format gambar tidak valid');
-          const mimeType = match[1];
-          
-          // Convert base64 to Blob
-          const base64Data = paymentProof.split(',')[1];
-          const byteCharacters = atob(base64Data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: mimeType });
+      // Generate filename with correct extension
+      const prefix = selectedPayment === 'qris' ? 'qris_' : 'proof_';
+      const fileExt = mimeType.split('/')[1] || 'png';
+      const filename = `${prefix}${crypto.randomUUID()}.${fileExt}`;
 
-          // Generate filename with correct extension
-          const prefix = selectedPayment === 'qris' ? 'qris_' : 'proof_';
-          const fileExt = mimeType.split('/')[1] || 'png';
-          const filename = `${prefix}${crypto.randomUUID()}.${fileExt}`;
+      // Upload to Supabase with explicit content type
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(filename, blob, {
+          contentType: mimeType,
+          upsert: false,
+          cacheControl: '3600',
+        });
 
-          // Upload to Supabase with explicit content type
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from(BUCKET)
-            .upload(filename, blob, {
-              contentType: mimeType,
-              upsert: false,
-              cacheControl: '3600',
-            });
-
-          if (uploadError) {
-            throw new Error(`Gagal mengunggah bukti pembayaran: ${uploadError.message}`);
-          }
-
-          paymentProofPath = filename;
-        } catch (error) {
-          throw new Error('Gagal mengunggah bukti pembayaran');
-        }
+      if (uploadError) {
+        throw new Error(`Gagal mengunggah bukti pembayaran: ${uploadError.message}`);
       }
+
+      const paymentProofPath = filename;
 
       const orderData = {
         customer_name: order.customer_name,
@@ -192,7 +196,12 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
 
       setOrderData(updatedOrder);
       setShowOrderDetail(true);
-      onSuccess();
+
+      // Show success toast
+      toast({
+        title: "Pembayaran Berhasil! 🎉",
+        description: `Pre-order Anda telah dikonfirmasi${paymentType === 'dp50' ? ' dengan DP 50%' : ' dengan pembayaran penuh'}. Terima kasih!`,
+      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -201,6 +210,37 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
       });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handlePaymentProofUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setPaymentProofError('Harap unggah file gambar (PNG, JPG, JPEG)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setPaymentProofError('Ukuran gambar terlalu besar. Maksimal 5MB');
+      return;
+    }
+
+    try {
+      // Read file as base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setPaymentProof(reader.result as string);
+          setPaymentProofError('');
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      setPaymentProofError('Gagal mengunggah gambar');
     }
   };
 
@@ -217,10 +257,7 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
           <OrderDetailModal
             order={orderData || order}
             product={product}
-            onClose={() => {
-              setShowOrderDetail(false);
-              onSuccess();
-            }}
+            onClose={() => setShowOrderDetail(false)}
           />
         )}
 
@@ -385,16 +422,13 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
                           alt="QRIS Code"
                           className="max-w-full"
                           onError={(e) => {
-                            console.error('Error loading QRIS image:', e);
                             const target = e.target as HTMLImageElement;
                             target.onerror = null;
                             target.src = 'https://via.placeholder.com/200?text=Gagal+memuat+QRIS';
                           }}
                         />
                       ) : (
-                        <div className="text-center p-4">
-                          <p className="text-sm text-muted-foreground">QRIS tidak tersedia</p>
-                        </div>
+                        <div className="text-sm text-muted-foreground">QRIS tidak tersedia</div>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">QRIS {selectedAccount.bank_name}</p>
@@ -445,22 +479,7 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              if (reader.result) {
-                                setPaymentProof(reader.result as string);
-                                setPaymentProofError('');
-                              }
-                            };
-                            reader.onerror = () => {
-                              setPaymentProofError('Gagal membaca file');
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
+                        onChange={handlePaymentProofUpload}
                         className="hidden"
                         id="paymentProof"
                       />
@@ -581,22 +600,7 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              if (reader.result) {
-                                setPaymentProof(reader.result as string);
-                                setPaymentProofError('');
-                              }
-                            };
-                            reader.onerror = () => {
-                              setPaymentProofError('Gagal membaca file');
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
+                        onChange={handlePaymentProofUpload}
                         className="hidden"
                         id="paymentProofBank"
                       />

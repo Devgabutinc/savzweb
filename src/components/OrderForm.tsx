@@ -187,11 +187,20 @@ const OrderForm = ({ product, onClose, onSuccess }: OrderFormProps) => {
                 <div>
                   <label className="block text-sm font-medium mb-2">Jumlah *</label>
                   <Input
-                    type="number"
-                    min="1"
-                    max="10"
+                    type="text"
+                    pattern="[1-9][0-9]*"
                     value={formData.quantity}
-                    onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow empty string while typing
+                      if (value === "") {
+                        setFormData(prev => ({ ...prev, quantity: "" }));
+                        return;
+                      }
+                      // Convert to number and ensure minimum 1
+                      const num = Math.max(1, parseInt(value) || 1);
+                      setFormData(prev => ({ ...prev, quantity: num.toString() }));
+                    }}
                     required
                   />
                 </div>
