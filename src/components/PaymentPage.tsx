@@ -45,10 +45,10 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
         const { data, error } = await supabase
           .from('payment_accounts')
           .select('*')
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .order('created_at', { ascending: true });
 
         if (error) {
-          console.error('Error fetching payment accounts:', error);
           toast({
             variant: "destructive",
             title: "Error",
@@ -59,13 +59,10 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
 
         setPaymentAccounts(data || []);
         
-        // Set default account based on selected payment method
-        if (data) {
-          const defaultAccount = data.find(acc => {
-            if (!selectedPayment) return false;
-            return acc.method === selectedPayment;
-          });
+        if (data && data.length > 0) {
+          const defaultAccount = data.find(acc => acc.method === 'qris') || data[0];
           setSelectedAccount(defaultAccount);
+          setSelectedPayment(defaultAccount.method as 'qris' | 'bank');
         }
       } catch (error) {
         console.error('Error fetching payment accounts:', error);
@@ -78,7 +75,7 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
     };
 
     fetchAccounts();
-  }, []);
+  }, [toast]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -98,14 +95,10 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
 
   const handlePaymentSelect = (method: 'qris' | 'bank') => {
     setSelectedPayment(method);
-    setSelectedAccount(null); // Reset selected account
     
     // Find account based on selected method
     const account = paymentAccounts.find(acc => acc.method === method);
-    if (account) {
-      setSelectedAccount(account);
-    }
-
+    setSelectedAccount(account || null);
     setShowQRIS(method === 'qris');
   };
 
@@ -141,8 +134,6 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
           const fileExt = mimeType.split('/')[1] || 'png';
           const filename = `${prefix}${crypto.randomUUID()}.${fileExt}`;
 
-          console.log('Uploading payment proof:', filename);
-          
           // Upload to Supabase with explicit content type
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from(BUCKET)
@@ -153,11 +144,9 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
             });
 
           if (uploadError) {
-            console.error('Upload error details:', uploadError);
             throw new Error(`Gagal mengunggah bukti pembayaran: ${uploadError.message}`);
           }
 
-          console.log('Upload successful:', uploadData);
           paymentProofPath = filename;
         } catch (error) {
           console.error('Error uploading payment proof:', error);
@@ -166,30 +155,31 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
       }
 
       const orderData = {
-        ...order,
+        customer_name: order.customer_name,
+        customer_phone: order.customer_phone,
+        customer_address: order.customer_address,
+        product_id: order.product_id,
+        size: order.size,
+        quantity: order.quantity,
+        total_price: order.total_price,
+        notes: order.notes,
+        status: 'pending',
         payment_method: selectedPayment || 'qris',
         payment_type: paymentType,
         payment_amount: calculatePaymentAmount(),
         remaining_amount: calculateRemainingAmount(),
-        payment_proof: paymentProofPath, // Menyimpan path ke file bukti pembayaran
+        payment_proof: paymentProofPath,
       };
-
-      console.log('Saving order to database:', orderData);
 
       const { data, error } = await supabase
         .from('orders')
         .insert([orderData])
-        .select()
+        .select('id, status, payment_method, payment_type, payment_amount, remaining_amount')
         .single();
 
       if (error) {
-        console.error('Error saving order:', error);
-        // Try to get more detailed error message
-        const errorMessage = error.message || 'Gagal menyimpan pesanan. Silakan coba lagi.';
-        throw new Error(errorMessage);
+        throw new Error(error.message || 'Gagal menyimpan pesanan. Silakan coba lagi.');
       }
-
-      console.log('Order saved successfully:', data);
 
       toast({
         title: "Pembayaran Berhasil! 🎉",
@@ -373,11 +363,23 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
                 {selectedAccount && selectedAccount.method === 'qris' && (
                   <div className="bg-white p-6 rounded-lg border-2 border-dashed border-muted-foreground/30">
                     <div className="w-48 h-48 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <img
-                        src={`${supabase.storage.from(BUCKET).getPublicUrl(selectedAccount.barcode_path).data.publicUrl}`}
-                        alt="QRIS Code"
-                        className="max-w-full"
-                      />
+                      {selectedAccount.barcode_path ? (
+                        <img
+                          src={`${supabase.storage.from(BUCKET).getPublicUrl(selectedAccount.barcode_path).data.publicUrl}`}
+                          alt="QRIS Code"
+                          className="max-w-full"
+                          onError={(e) => {
+                            console.error('Error loading QRIS image:', e);
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = 'https://via.placeholder.com/200?text=Gagal+memuat+QRIS';
+                          }}
+                        />
+                      ) : (
+                        <div className="text-center p-4">
+                          <p className="text-sm text-muted-foreground">QRIS tidak tersedia</p>
+                        </div>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">QRIS {selectedAccount.bank_name}</p>
                     <p className="font-bold text-lg mt-2">{formatPrice(calculatePaymentAmount())}</p>
