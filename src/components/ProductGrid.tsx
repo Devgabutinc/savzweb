@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { Clock, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/types/database";
@@ -10,11 +10,16 @@ import OrderForm from "./OrderForm";
 import ImageCarousel from "./ImageCarousel";
 import Lightbox from "./Lightbox";
 
+interface ProductWithAvailableStock extends Product {
+  available_stock: number;
+  total_orders: number;
+}
+
 const ProductGrid = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithAvailableStock[]>([]);
   const [timeLeft, setTimeLeft] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductWithAvailableStock | null>(null);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[] | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -83,21 +88,36 @@ const ProductGrid = () => {
 
   const fetchProducts = async () => {
     try {
+      // Fetch products with orders count using a single query with join
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(`
+          *,
+          orders!orders_product_id_fkey(quantity)
+        `)
         .eq("status", "active")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      const processed = (data || []).map((p) => ({
-        ...p,
-        image_url: p.image_url ? p.image_url : makePublicUrl(p.image_path),
-        image_paths: p.image_paths ? p.image_paths.map((path: string) => makePublicUrl(path)) : null,
-      }));
+      const processed = (data || []).map((p) => {
+        // Calculate total orders quantity for this product
+        const totalOrders = p.orders?.reduce((sum: number, order: any) => sum + (order.quantity || 0), 0) || 0;
+        
+        // Calculate available stock
+        const availableStock = Math.max(0, (p.stock_quantity || 0) - totalOrders);
 
-      setProducts(processed as Product[]);
+        return {
+          ...p,
+          orders: undefined, // Remove orders array from the final object
+          total_orders: totalOrders,
+          available_stock: availableStock,
+          image_url: p.image_url ? p.image_url : makePublicUrl(p.image_path),
+          image_paths: p.image_paths ? p.image_paths.map((path: string) => makePublicUrl(path)) : null,
+        };
+      });
+
+      setProducts(processed as ProductWithAvailableStock[]);
     } catch (error) {
       console.error("Error fetching products:", error);
       toast({
@@ -110,7 +130,17 @@ const ProductGrid = () => {
     }
   };
 
-  const handlePreOrder = (product: Product) => {
+  const handlePreOrder = (product: ProductWithAvailableStock) => {
+    // Check if stock is available
+    if (product.available_stock <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Stok Habis",
+        description: "Maaf, produk ini sudah tidak tersedia.",
+      });
+      return;
+    }
+
     setSelectedProduct(product);
     setShowOrderForm(true);
   };
@@ -128,6 +158,21 @@ const ProductGrid = () => {
     }).format(price);
   };
 
+  const getStockBadgeColor = (availableStock: number, totalStock: number) => {
+    const percentage = totalStock > 0 ? (availableStock / totalStock) * 100 : 0;
+    
+    if (availableStock === 0) return "destructive";
+    if (percentage <= 20) return "secondary";
+    if (percentage <= 50) return "outline";
+    return "default";
+  };
+
+  const getStockText = (availableStock: number) => {
+    if (availableStock === 0) return "Habis";
+    if (availableStock <= 5) return `Tersisa ${availableStock}`;
+    return `${availableStock} tersedia`;
+  };
+
   if (showOrderForm && selectedProduct) {
     return (
       <OrderForm
@@ -139,6 +184,8 @@ const ProductGrid = () => {
         onSuccess={() => {
           setShowOrderForm(false);
           setSelectedProduct(null);
+          // Refresh products to update stock
+          fetchProducts();
           toast({
             title: "Order berhasil! 🎉",
             description: "Pre-order Anda telah berhasil dibuat.",
@@ -225,23 +272,39 @@ const ProductGrid = () => {
                         }}
                       />
                     )}
-                    {/* Discount Badge */}
-                    {product.original_price && (
-                      <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground">
-                        {calculateDiscount(product.price, product.original_price)}% OFF
-                      </Badge>
-                    )}
-                    {/* Countdown Badge */}
-                    {product.po_end_date && (
-                      <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm rounded-lg px-3 py-2">
-                        <div className="flex items-center space-x-1 text-sm">
-                          <Clock className="h-4 w-4 text-accent" />
-                          <span className="font-medium text-foreground">
-                            {timeLeft[product.id] || "Loading..."}
-                          </span>
+                    
+                    {/* Top badges container */}
+                    <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
+                      {/* Discount Badge */}
+                      {product.original_price && (
+                        <Badge className="bg-accent text-accent-foreground">
+                          {calculateDiscount(product.price, product.original_price)}% OFF
+                        </Badge>
+                      )}
+                      
+                      {/* Countdown Badge */}
+                      {product.po_end_date && (
+                        <div className="bg-background/80 backdrop-blur-sm rounded-lg px-3 py-2">
+                          <div className="flex items-center space-x-1 text-sm">
+                            <Clock className="h-4 w-4 text-accent" />
+                            <span className="font-medium text-foreground">
+                              {timeLeft[product.id] || "Loading..."}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
+
+                    {/* Stock Badge - Bottom Right */}
+                    <div className="absolute bottom-4 right-4">
+                      <Badge 
+                        variant={getStockBadgeColor(product.available_stock, product.stock_quantity || 0)}
+                        className="flex items-center space-x-1"
+                      >
+                        <Package className="h-3 w-3" />
+                        <span>{getStockText(product.available_stock)}</span>
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
 
@@ -276,20 +339,46 @@ const ProductGrid = () => {
                     </div>
                   </div>
 
-                  {/* Stock */}
+                  {/* Stock Info */}
                   <div className="mb-4">
-                    <div className="flex justify-between text-sm text-muted-foreground mb-2">
-                      <span>Stok: {product.stock_quantity || 0}</span>
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-muted-foreground">
+                        Stok: {product.available_stock} / {product.stock_quantity || 0}
+                      </span>
+                      <span className="text-muted-foreground">
+                        Terjual: {product.total_orders}
+                      </span>
+                    </div>
+                    
+                    {/* Stock Progress Bar */}
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          product.available_stock === 0 
+                            ? 'bg-red-500' 
+                            : product.available_stock <= 5 
+                            ? 'bg-yellow-500' 
+                            : 'bg-green-500'
+                        }`}
+                        style={{ 
+                          width: `${product.stock_quantity ? (product.available_stock / product.stock_quantity) * 100 : 0}%` 
+                        }}
+                      ></div>
                     </div>
                   </div>
                 </CardContent>
 
                 <CardFooter className="p-6 pt-0">
                   <Button
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+                    className={`w-full font-semibold ${
+                      product.available_stock <= 0
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    }`}
                     onClick={() => handlePreOrder(product)}
+                    disabled={product.available_stock <= 0}
                   >
-                    Pre-Order Sekarang
+                    {product.available_stock <= 0 ? 'Stok Habis' : 'Pre-Order Sekarang'}
                   </Button>
                 </CardFooter>
               </Card>
