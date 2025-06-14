@@ -138,7 +138,9 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
       // Generate filename with correct extension
       const prefix = selectedPayment === 'qris' ? 'qris_' : 'proof_';
       const fileExt = mimeType.split('/')[1] || 'png';
-      const filename = `${prefix}${crypto.randomUUID()}.${fileExt}`;
+      const timestamp = Date.now().toString(36);
+      const random = Math.random().toString(36).substring(2);
+      const filename = `${prefix}${timestamp}-${random}.${fileExt}`;
 
       // Upload to Supabase with explicit content type
       const { data: uploadData, error: uploadError } = await supabase.storage
