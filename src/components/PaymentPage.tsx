@@ -257,7 +257,10 @@ const PaymentPage = ({ order, product, onBack, onSuccess }: PaymentPageProps) =>
           <OrderDetailModal
             order={orderData || order}
             product={product}
-            onClose={() => setShowOrderDetail(false)}
+            onClose={() => {
+              setShowOrderDetail(false);
+            }}
+            onSuccess={onSuccess}
           />
         )}
 
