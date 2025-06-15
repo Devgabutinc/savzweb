@@ -310,10 +310,17 @@ const SizeGuide = () => {
                 </div>
                 <h3 className="font-semibold text-lg mb-2">WhatsApp</h3>
                 <p className="text-gray-600 mb-4">Chat langsung dengan customer service</p>
-                <Button variant="outline" className="w-full">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Chat WhatsApp
-                </Button>
+                <a
+                  href="https://wa.me/6282111321173"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full"
+                >
+                  <Button variant="outline" className="w-full">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Chat WhatsApp
+                  </Button>
+                </a>
               </div>
             </CardContent>
           </Card>
@@ -328,7 +335,7 @@ const SizeGuide = () => {
                 <p className="text-gray-600 mb-4">Hubungi langsung via telepon</p>
                 <Button variant="outline" className="w-full">
                   <Phone className="h-4 w-4 mr-2" />
-                  (021) 1234-5678
+                  0821-1132-1173
                 </Button>
               </div>
             </CardContent>
