@@ -18,39 +18,49 @@ import {
 } from "lucide-react";
 
 const SizeGuide = () => {
-  const shirtSizes = [
-    { size: 'XS', chest: '44-46', length: '64', shoulder: '40', sleeve: '19' },
-    { size: 'S', chest: '46-48', length: '66', shoulder: '42', sleeve: '20' },
-    { size: 'M', chest: '48-50', length: '68', shoulder: '44', sleeve: '21' },
-    { size: 'L', chest: '50-52', length: '70', shoulder: '46', sleeve: '22' },
-    { size: 'XL', chest: '52-54', length: '72', shoulder: '48', sleeve: '23' },
-    { size: 'XXL', chest: '54-56', length: '74', shoulder: '50', sleeve: '24' },
+  const regular24sSizes = [
+    { size: 'S', width: '47', height: '67' },
+    { size: 'M', width: '50', height: '70' },
+    { size: 'L', width: '53', height: '73' },
+    { size: 'XL', width: '56', height: '75' },
+    { size: 'XXL', width: '59', height: '77' },
+    { size: 'XXXL', width: '62', height: '80' },
   ];
 
-  const hoodieSizes = [
-    { size: 'XS', chest: '48-50', length: '60', shoulder: '44', sleeve: '58' },
-    { size: 'S', chest: '50-52', length: '62', shoulder: '46', sleeve: '60' },
-    { size: 'M', chest: '52-54', length: '64', shoulder: '48', sleeve: '62' },
-    { size: 'L', chest: '54-56', length: '66', shoulder: '50', sleeve: '64' },
-    { size: 'XL', chest: '56-58', length: '68', shoulder: '52', sleeve: '66' },
-    { size: 'XXL', chest: '58-60', length: '70', shoulder: '54', sleeve: '68' },
+  const oversize24sSizes = [
+    { size: 'M', width: '53', height: '72', sleeve: '26.5' },
+    { size: 'L', width: '57', height: '74', sleeve: '27' },
+    { size: 'XL', width: '60', height: '75', sleeve: '28.5' },
+    { size: 'XXL', width: '63', height: '77', sleeve: '19.5' },
+  ];
+
+  const boxycut24sSizes = [
+    { size: 'M', width: '54', height: '63', sleeve: '17', armLength: '25' },
+    { size: 'L', width: '57', height: '66', sleeve: '19', armLength: '25' },
+    { size: 'XL', width: '60', height: '68', sleeve: '19', armLength: '26' },
+    { size: 'XXL', width: '63', height: '69', sleeve: '20', armLength: '27' },
   ];
 
   const measurementTips = [
     {
       icon: <Ruler className="h-5 w-5" />,
-      title: "Lingkar Dada",
-      description: "Ukur pada bagian terlebar dada, tepat di bawah ketiak"
+      title: "Lebar (Width)",
+      description: "Ukur pada bagian terlebar kaos"
     },
     {
       icon: <User className="h-5 w-5" />,
-      title: "Panjang Badan",
-      description: "Ukur dari bahu tertinggi hingga ujung bawah kaos"
+      title: "Tinggi (Height)",
+      description: "Ukur dari leher hingga ujung bawah kaos"
     },
     {
       icon: <Shirt className="h-5 w-5" />,
-      title: "Lebar Bahu",
-      description: "Ukur dari ujung bahu kiri ke ujung bahu kanan"
+      title: "Panjang Lengan (Sleeve)",
+      description: "Ukur dari bahu hingga ujung lengan"
+    },
+    {
+      icon: <Info className="h-5 w-5" />,
+      title: "Lingkar Bahu (Arm Length)",
+      description: "Ukur keliling bagian atas lengan"
     }
   ];
 
@@ -80,95 +90,209 @@ const SizeGuide = () => {
 
         {/* Size Chart Tabs */}
         <div className="mb-12">
-          <Tabs defaultValue="shirts" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="shirts" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900">
+          <Tabs defaultValue="regular" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-8">
+              <TabsTrigger value="regular" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900">
                 <Shirt className="h-4 w-4" />
-                T-Shirt & Polo
+                Regular 24s
               </TabsTrigger>
-              <TabsTrigger value="hoodies" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900">
+              <TabsTrigger value="oversize" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900">
                 <Shirt className="h-4 w-4" />
-                Hoodie & Sweater
+                Oversize 24s
+              </TabsTrigger>
+              <TabsTrigger value="boxycut" className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-900">
+                <Shirt className="h-4 w-4" />
+                Boxycut 24s
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="shirts">
+            <TabsContent value="regular">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Shirt className="h-5 w-5 text-yellow-500" />
-                    Ukuran T-Shirt & Polo Shirt
+                    <Badge variant="outline">Regular 24s</Badge>
+                    <span>Size Chart</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Size</th>
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Lingkar Dada (cm)</th>
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Panjang Badan (cm)</th>
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Lebar Bahu (cm)</th>
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Panjang Lengan (cm)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {shirtSizes.map((size, index) => (
-                          <tr key={size.size} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="border border-gray-200 px-4 py-3">
-                              <Badge variant="outline" className="font-semibold">
-                                {size.size}
-                              </Badge>
-                            </td>
-                            <td className="border border-gray-200 px-4 py-3 font-medium">{size.chest}</td>
-                            <td className="border border-gray-200 px-4 py-3 font-medium">{size.length}</td>
-                            <td className="border border-gray-200 px-4 py-3 font-medium">{size.shoulder}</td>
-                            <td className="border border-gray-200 px-4 py-3 font-medium">{size.sleeve}</td>
+                  <div className="space-y-8">
+                    <div className="flex justify-center mb-8">
+                      <img 
+                        src="/images/tshirt-regular.jpg" 
+                        alt="Regular T-Shirt" 
+                        className="w-full max-w-sm rounded-lg shadow-lg"
+                      />
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2">Size</th>
+                            <th className="text-left py-2">Width (cm)</th>
+                            <th className="text-left py-2">Height (cm)</th>
                           </tr>
+                        </thead>
+                        <tbody>
+                          {regular24sSizes.map((size) => (
+                            <tr key={size.size} className="border-b">
+                              <td className="py-2">{size.size}</td>
+                              <td className="py-2">{size.width}</td>
+                              <td className="py-2">{size.height}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="font-semibold">Measurement Tips</h3>
+                      {measurementTips.map((tip) => (
+                        <div key={tip.title} className="flex items-start gap-3">
+                          {tip.icon}
+                          <div>
+                            <h4 className="font-medium">{tip.title}</h4>
+                            <p className="text-sm text-gray-600">{tip.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-2">Sizing Tips</h3>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {sizingTips.map((tip, index) => (
+                          <li key={index} className="text-sm text-gray-600">{tip}</li>
                         ))}
-                      </tbody>
-                    </table>
+                      </ul>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="hoodies">
+            <TabsContent value="oversize">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Shirt className="h-5 w-5 text-yellow-500" />
-                    Ukuran Hoodie & Sweater
+                    <Badge variant="outline">Oversize 24s</Badge>
+                    <span>Size Chart</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Size</th>
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Lingkar Dada (cm)</th>
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Panjang Badan (cm)</th>
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Lebar Bahu (cm)</th>
-                          <th className="border border-gray-200 px-4 py-3 text-left font-semibold">Panjang Lengan (cm)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {hoodieSizes.map((size, index) => (
-                          <tr key={size.size} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="border border-gray-200 px-4 py-3">
-                              <Badge variant="outline" className="font-semibold">
-                                {size.size}
-                              </Badge>
-                            </td>
-                            <td className="border border-gray-200 px-4 py-3 font-medium">{size.chest}</td>
-                            <td className="border border-gray-200 px-4 py-3 font-medium">{size.length}</td>
-                            <td className="border border-gray-200 px-4 py-3 font-medium">{size.shoulder}</td>
-                            <td className="border border-gray-200 px-4 py-3 font-medium">{size.sleeve}</td>
+                  <div className="space-y-8">
+                    <div className="flex justify-center mb-8">
+                      <img 
+                        src="/images/tshirt-oversize.jpg" 
+                        alt="Oversize T-Shirt" 
+                        className="w-full max-w-sm rounded-lg shadow-lg"
+                      />
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2">Size</th>
+                            <th className="text-left py-2">Width (cm)</th>
+                            <th className="text-left py-2">Height (cm)</th>
+                            <th className="text-left py-2">Sleeve Length (cm)</th>
                           </tr>
+                        </thead>
+                        <tbody>
+                          {oversize24sSizes.map((size) => (
+                            <tr key={size.size} className="border-b">
+                              <td className="py-2">{size.size}</td>
+                              <td className="py-2">{size.width}</td>
+                              <td className="py-2">{size.height}</td>
+                              <td className="py-2">{size.sleeve}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="font-semibold">Measurement Tips</h3>
+                      {measurementTips.map((tip) => (
+                        <div key={tip.title} className="flex items-start gap-3">
+                          {tip.icon}
+                          <div>
+                            <h4 className="font-medium">{tip.title}</h4>
+                            <p className="text-sm text-gray-600">{tip.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-2">Sizing Tips</h3>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {sizingTips.map((tip, index) => (
+                          <li key={index} className="text-sm text-gray-600">{tip}</li>
                         ))}
-                      </tbody>
-                    </table>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="boxycut">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Badge variant="outline">Boxycut 24s</Badge>
+                    <span>Size Chart</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-8">
+                    <div className="flex justify-center mb-8">
+                      <img 
+                        src="/images/tshirt-boxycut.jpg" 
+                        alt="Boxycut T-Shirt" 
+                        className="w-full max-w-sm rounded-lg shadow-lg"
+                      />
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2">Size</th>
+                            <th className="text-left py-2">Width (cm)</th>
+                            <th className="text-left py-2">Height (cm)</th>
+                            <th className="text-left py-2">Sleeve Length (cm)</th>
+                            <th className="text-left py-2">Arm Length (cm)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {boxycut24sSizes.map((size) => (
+                            <tr key={size.size} className="border-b">
+                              <td className="py-2">{size.size}</td>
+                              <td className="py-2">{size.width}</td>
+                              <td className="py-2">{size.height}</td>
+                              <td className="py-2">{size.sleeve}</td>
+                              <td className="py-2">{size.armLength}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="font-semibold">Measurement Tips</h3>
+                      {measurementTips.map((tip) => (
+                        <div key={tip.title} className="flex items-start gap-3">
+                          {tip.icon}
+                          <div>
+                            <h4 className="font-medium">{tip.title}</h4>
+                            <p className="text-sm text-gray-600">{tip.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-2">Sizing Tips</h3>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {sizingTips.map((tip, index) => (
+                          <li key={index} className="text-sm text-gray-600">{tip}</li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -176,100 +300,8 @@ const SizeGuide = () => {
           </Tabs>
         </div>
 
-        {/* Measurement Guide */}
-        <div className="grid md:grid-cols-2 gap-8 mb-12">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-yellow-500" />
-                Cara Mengukur
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {measurementTips.map((tip, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg">
-                    <div className="text-yellow-500 mt-0.5">
-                      {tip.icon}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white">{tip.title}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{tip.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5 text-yellow-500" />
-                Tips Memilih Size
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="bg-gray-50">
-              <div className="space-y-3">
-                {sizingTips.map((tip, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <Check className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-gray-700">{tip}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Visual Guide */}
-        <Card className="mb-12">
-          <CardHeader>
-            <CardTitle className="text-center">Panduan Visual Pengukuran</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div>
-                <img 
-                  src="https://images.unsplash.com/photo-1583743814966-8936f37f4570?w=400&h=300&fit=crop" 
-                  alt="Measurement guide" 
-                  className="w-full rounded-lg shadow-lg"
-                />
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold">Petunjuk Pengukuran:</h3>
-                <div className="space-y-4 bg-white p-4 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">1</div>
-                    <p className="text-gray-600">Gunakan meteran kain untuk hasil akurat</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">2</div>
-                    <p className="text-gray-600">Ukur dalam posisi berdiri tegak</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">3</div>
-                    <p className="text-gray-700">Pastikan meteran tidak terlalu ketat</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">4</div>
-                    <p className="text-gray-700">Catat semua ukuran dengan teliti</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Contact Section */}
-        <Alert className="mb-8">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Masih ragu dengan ukuran?</strong> Tim customer service kami siap membantu Anda memilih ukuran yang tepat.
-          </AlertDescription>
-        </Alert>
-
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="text-center">
@@ -278,7 +310,7 @@ const SizeGuide = () => {
                 </div>
                 <h3 className="font-semibold text-lg mb-2">WhatsApp</h3>
                 <p className="text-gray-600 mb-4">Chat langsung dengan customer service</p>
-                <Button className="w-full bg-green-600 hover:bg-green-700">
+                <Button variant="outline" className="w-full">
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Chat WhatsApp
                 </Button>
@@ -301,14 +333,6 @@ const SizeGuide = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Download Section */}
-        <div className="text-center mt-12">
-          <Button variant="outline" size="lg" className="inline-flex items-center gap-2">
-            <Download className="h-5 w-5" />
-            Download Size Chart PDF
-          </Button>
         </div>
       </main>
       <Footer />

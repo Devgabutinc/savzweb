@@ -16,13 +16,13 @@ const Footer = () => {
               Bergabunglah dengan komunitas fashion enthusiast Indonesia.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-primary-foreground/80 hover:text-accent transition-colors">
+              <a href="https://www.instagram.com/savz.ofc/" className="text-primary-foreground/80 hover:text-accent transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="text-primary-foreground/80 hover:text-accent transition-colors">
+              <a href="mailto:info@savzofc.store" className="text-primary-foreground/80 hover:text-accent transition-colors">
                 <Mail className="h-5 w-5" />
               </a>
-              <a href="#" className="text-primary-foreground/80 hover:text-accent transition-colors">
+              <a href="https://wa.me/6282111321173" className="text-primary-foreground/80 hover:text-accent transition-colors">
                 <Phone className="h-5 w-5" />
               </a>
             </div>
@@ -43,9 +43,9 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-primary-foreground/80">
-              <li>WhatsApp: +62 812-3456-7890</li>
-              <li>Email: hello@savzofficial.com</li>
-              <li>Instagram: @savzofficial</li>
+              <li>WhatsApp: +62 821-1132-1173</li>
+              <li>Email: info@savzofc.store</li>
+              <li>Instagram: @savzofc</li>
             </ul>
           </div>
         </div>
