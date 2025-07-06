@@ -330,6 +330,7 @@ export default function OrderListPage() {
                       Pembayaran
                     </div>
                   </TableHead>
+                  <TableHead className="font-semibold text-gray-900">Catatan</TableHead>
                   <TableHead className="font-semibold text-gray-900">Bukti</TableHead>
                   <TableHead className="font-semibold text-gray-900">Status</TableHead>
                   <TableHead className="font-semibold text-gray-900">Aksi</TableHead>
@@ -338,7 +339,7 @@ export default function OrderListPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12">
+                    <TableCell colSpan={9} className="text-center py-12">
                       <div className="flex flex-col items-center gap-2">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                         <p className="text-gray-500">Memuat data...</p>
@@ -347,7 +348,7 @@ export default function OrderListPage() {
                   </TableRow>
                 ) : filteredOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12">
+                    <TableCell colSpan={9} className="text-center py-12">
                       <div className="flex flex-col items-center gap-2">
                         <Package className="h-12 w-12 text-gray-400" />
                         <p className="text-gray-500 text-lg">Tidak ada order yang ditemukan</p>
@@ -394,6 +395,13 @@ export default function OrderListPage() {
                             {formatPrice(order.payment_amount)}
                           </p>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {order.notes ? (
+                          <span className="text-sm text-gray-900">{order.notes}</span>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {order.payment_proof ? (
